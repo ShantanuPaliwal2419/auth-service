@@ -13,7 +13,8 @@ export async function generateAccessToken(
 
   const {kid,privateKey} = getActiveJwtKey()
 
-  
+ 
+
   const token = jwt.sign(
     {
       sub: payload.userId,
@@ -28,6 +29,8 @@ export async function generateAccessToken(
       keyid: kid, 
     }
   );
+   console.log("Private key:", privateKey);
+console.log("Generated token:", token);
 
   return token;
 }

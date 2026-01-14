@@ -23,22 +23,23 @@ export const Register = asyncHandler(async(req:Request,res:Response)=>{
     if(!newUser[0]?.id){
         throw new ApiError(500,"user id not found")
     }
-    const refreshToken= createRefreshToken(newUser[0]?.id)
+    const refreshToken=await createRefreshToken(newUser[0]?.id)
     const tokenacess = generateAccessToken({userId:newUser[0]?.id, roles:["user"]})
     if(!tokenacess || !refreshToken){
  throw new ApiError(500,"Error generating tokens")
 }
           res
   .cookie("access_token", tokenacess, {
-    httpOnly: true,
-    secure: true,
-    sameSite: "strict",
-    maxAge: 10 * 60 * 1000,
+   httpOnly: true,
+  secure: false,       
+  sameSite: "lax",     
+  path: "/",           
+  maxAge: 10 * 60 * 1000,
   })
   .cookie("refresh_token", refreshToken, {
     httpOnly: true,
-    secure: true,
-    sameSite: "strict",
+    secure: false,
+    sameSite: "lax",
     maxAge: 30 * 24 * 60 * 60 * 1000,
   })
   .status(201)

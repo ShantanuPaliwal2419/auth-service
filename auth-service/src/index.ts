@@ -5,15 +5,19 @@ import "dotenv/config";
 import { testDatabaseConnection } from "./databaseConnection/database-connection";
 import { jwtBootstrap } from "./utils/jwtBootstrap";
 import userrouter from "./Routes/user.routes";
+import { jwtVerify } from "./middleware/jwtVerify";
+import { generateAccessToken } from "./utils/generateAcessToken";
 
 const app = express();
 
 /* ---------- Middlewares ---------- */
-app.use(express.json());
+app.use(express.json({strict:true}));
 app.use(cookieParser());
+
 app.use(express.urlencoded({ extended: true }));
 testDatabaseConnection()
 await jwtBootstrap()
+
 app.use("/user", userrouter)
 app.use(
   cors({
@@ -31,5 +35,5 @@ app.get("/health", (_req, res) => {
 const PORT = process.env.PORT || 4000;
 
 app.listen(PORT, () => {
-  console.log(`🚀 Auth service running on port ${PORT}`);
+  console.log(` Auth service running on port ${PORT}`);
 });
