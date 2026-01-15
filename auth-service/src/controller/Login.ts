@@ -8,7 +8,8 @@ import bcrypt from "bcryptjs"
 import { ApiResponse } from "../utils/ApiResponse";
 
 import { generateAccessToken } from "../utils/generateAcessToken";
-import { createRefreshToken } from "../utils/generateRefreshToken";
+import { createRefreshToken, generateRefreshToken } from "../utils/generateRefreshToken";
+import { refreshTokenTable } from "../db/schema/refreshToken";
 export const Login = asyncHandler(async(req: Request, res: Response)=>{
  const {email,password} =  req.body
  const user = await db.select().from(userTable).where(eq(userTable.email, email))
@@ -22,7 +23,12 @@ export const Login = asyncHandler(async(req: Request, res: Response)=>{
      if(!checkpassword){
         throw new ApiError(401,"password is incorrect")
      }
-     const refreshToken= await createRefreshToken(user[0]?.id)
+     const refreshToken= generateRefreshToken()
+     await db.insert(refreshTokenTable).values({
+        userId:user[0]?.id,
+        token_hash:refreshToken.hashedRefreshToken,
+        expires_at:new Date(Date.now()+30*24*60*60*1000)
+     })
          const tokenacess =  await generateAccessToken({userId:user[0]?.id, roles:["user"]})
          if(!tokenacess || !refreshToken){
       throw new ApiError(500,"Error generating tokens")
@@ -35,7 +41,7 @@ export const Login = asyncHandler(async(req: Request, res: Response)=>{
   maxAge: 10 * 60 * 1000, 
 })
 
-       .cookie("refresh_token", refreshToken, {
+       .cookie("refresh_token", refreshToken.refreshToken, {
          httpOnly: true,
          secure: false,
          sameSite: "lax",

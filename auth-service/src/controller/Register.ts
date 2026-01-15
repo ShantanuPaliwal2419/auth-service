@@ -8,6 +8,8 @@ import { generateAccessToken } from "../utils/generateAcessToken";
 import { createRefreshToken, generateRefreshToken } from "../utils/generateRefreshToken";
 import { ApiResponse } from "../utils/ApiResponse";
 import type { Request, Response } from "express";
+import { refreshTokenTable } from "../db/schema/refreshToken";
+
 export const Register = asyncHandler(async(req:Request,res:Response)=>{
     const {username,password,email}= req.body
     if(!username || !password || !email){
@@ -23,7 +25,12 @@ export const Register = asyncHandler(async(req:Request,res:Response)=>{
     if(!newUser[0]?.id){
         throw new ApiError(500,"user id not found")
     }
-    const refreshToken=await createRefreshToken(newUser[0]?.id)
+    const refreshToken= generateRefreshToken()
+          await db.insert(refreshTokenTable).values({
+             userId:newUser[0]?.id,
+             token_hash:refreshToken.hashedRefreshToken,
+             expires_at:new Date(Date.now()+30*24*60*60*1000)
+          })
     const tokenacess = generateAccessToken({userId:newUser[0]?.id, roles:["user"]})
     if(!tokenacess || !refreshToken){
  throw new ApiError(500,"Error generating tokens")
@@ -36,7 +43,7 @@ export const Register = asyncHandler(async(req:Request,res:Response)=>{
   path: "/",           
   maxAge: 10 * 60 * 1000,
   })
-  .cookie("refresh_token", refreshToken, {
+  .cookie("refresh_token", refreshToken.refreshToken, {
     httpOnly: true,
     secure: false,
     sameSite: "lax",
